@@ -23,16 +23,23 @@ const int NAVE_H = 50;
 const int NAVE_L = 100;
 const int NAVE_VEL = 10;
 
-const int ALIEN_L = 60;
-const int ALIEN_H = 30;
-const float ALIEN_X_VEL = 5;
+const float TIRO_NAVE_VEL = 4;
+const int TIRO_L = 5;
+const int TIRO_H = 20;
+
+// LINHAS E COLUNAS TAMBÉM TEM QUE SER ALTERADAS PARA MUDAR A QUANTIDADE DE ALIENS
 const int ALIENS_INIMIGOS = 55;
-const int ESPACO_X_ENTRE_ALIENS = 90;
-const int ESPACO_Y_ENTRE_ALIENS = 60;
 const int LINHAS = 5;
 const int COLUNAS = 11;
+const int ALIEN_L = 60;
+const int ALIEN_H = 30;
+const float ALIEN_X_VEL = 2;
+const int ESPACO_X_ENTRE_ALIENS = 90;
+const int ESPACO_Y_ENTRE_ALIENS = 60;
 
-/***/
+
+
+/**/
 
 /**************CRIANDO CENÁRIO********************/
 
@@ -73,16 +80,24 @@ void desenha_nave(Nave_t nave)
 
 }
 
+void movimenta_nave(Nave_t *nave, int esquerda, int direita)
+{
+    if (esquerda)
+        nave->x -= nave->vel;
+    if (direita)
+        nave->x += nave->vel;
+}
+
 //faz o alien voltar no lado oposto a extremidade que ele alcançou
 void restringe_nave_na_tela(Nave_t *nave)
 {
-	if(nave->x > TELA_X)
+	if(nave->x > TELA_X - 1)
 	{
-		nave->x = 1;
+		nave->x = 2;
 	}
-	if(nave->x < 0)
+	if(nave->x < 1)
 	{
-		nave->x = TELA_X;
+		nave->x = TELA_X + 1;
 	}
 }
 /**/
@@ -150,9 +165,58 @@ void movimenta_alien_na_tela(Alien_t *alien)
 }
 /**/
 
-/********************* OS TIROS ***************************/
-//NAVE
-void tiro_da_nave(){}
+/********************* TIROS DA NAVE ***************************/
+// - ok
+typedef struct tiro{ 
+		float x, y;
+		float y_vel;
+		ALLEGRO_COLOR cor; 
+}Tiro_t;
+
+void inicializa_tiro_nave(Tiro_t *tiro, Nave_t nave)
+{
+	tiro->x = nave.x - TIRO_L/2;
+	tiro->y = TELA_Y - GRASS_Y/2 - NAVE_H;
+	tiro->y_vel = TIRO_NAVE_VEL;
+	tiro->cor = al_map_rgb(255,255,255);
+
+}
+
+//desenho do tiro da nave - ok
+void desenha_tiro_nave(Tiro_t tiro)
+{
+	
+	al_draw_filled_rectangle( tiro.x, tiro.y , 
+							 tiro.x + TIRO_L, tiro.y + TIRO_H, 
+							 tiro.cor);
+	
+}
+
+//movimenta o tiro 
+void movimenta_tiro_nave(Tiro_t *tiro, int *atirando)
+{
+	if (*atirando == 1)
+	{
+			tiro->y -= tiro->y_vel;
+		if(tiro->y <= 0)
+		{
+			*atirando = 0;
+		}
+	}
+}
+
+int verifica_tiro_passou_tela(Tiro_t *tiro)
+{
+	if(tiro->y <= 0)
+	{
+		return 1;
+	}
+	return 0;
+
+}
+
+/********************* OS TIROS DOS ALIENS ***************************/
+
 
 //ALIEN
 void tiro_do_alien(){}
@@ -288,7 +352,8 @@ int main(int argc, char **argv) {
  	/********************* CRIA INICIALIZA A FILA DE EVENTOS ***************************/
 
 	fila_eventos = al_create_event_queue();
-	if(!fila_eventos) {
+	if(!fila_eventos) 
+	{
 		fprintf(stderr, "não conseguiu criar a event_queue!\n");
 		al_destroy_display(display);
 		al_destroy_timer(timer);
@@ -310,8 +375,11 @@ int main(int argc, char **argv) {
 	/*************** FUNÇÕES E PROCESSOS DE INICIALIZAÇÃO DO JOGO ****************/
 
 	al_start_timer(timer);
+	//movimentação da nave
 	int direita = 0;
 	int esquerda = 0;
+	//tiro da nave
+	int atira = 0;
 	// Inicialização da nave
 	Nave_t nave;
 	inicializa_nave(&nave);
@@ -319,6 +387,8 @@ int main(int argc, char **argv) {
 	// inicialização dos aliens
 	Alien_t *alien = malloc(sizeof(Alien_t)* ALIENS_INIMIGOS);
 	inicializa_alien(alien);
+
+	Tiro_t tiro;
 
 	int jogando = 1;
 	while(jogando)
@@ -328,16 +398,25 @@ int main(int argc, char **argv) {
 		
 		if(ev.type == ALLEGRO_EVENT_TIMER)
 		{
-			if (esquerda) 
-			{ nave.x = nave.x - nave.vel; }
-			if (direita) 
-			{ nave.x = nave.x + nave.vel; }
+			movimenta_nave(&nave, esquerda, direita);
 
 			desenha_cenario(); // inicializando cenário
 
 			desenha_nave(nave); // inicializa a nave no cenário
 
 			desenha_aliens(alien, ALIENS_INIMIGOS); // inicializa o alien no cenário
+
+			// faz o processo correto para atirar
+			if(atira == 1)
+			{
+			desenha_tiro_nave(tiro);
+			movimenta_tiro_nave(&tiro, &atira);
+			
+			if( verifica_tiro_passou_tela(&tiro) == 1) 
+				{
+					atira = 0;
+				}
+			}
 
 			movimenta_alien_na_tela(alien);
 
@@ -372,7 +451,7 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if(ev.type == ALLEGRO_EVENT_KEY_UP)
+		if(ev.type == ALLEGRO_EVENT_KEY_UP) // garante o movimento continuo pressionando a tecla
 		{
 			switch(ev.keyboard.keycode){
 				case ALLEGRO_KEY_A:
@@ -385,7 +464,21 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		/*****/
+		// tecla para o tiro
+		if(ev.type == ALLEGRO_EVENT_KEY_DOWN)
+		{
+			switch(ev.keyboard.keycode)
+			{
+				case ALLEGRO_KEY_SPACE:
+					if(atira == 0)
+				    	{ 	
+							atira = 1;
+							inicializa_tiro_nave(&tiro, nave);
+						}
+					
+				break;
+			}
+		}
 
 
 
