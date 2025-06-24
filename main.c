@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
@@ -27,9 +28,9 @@ const int TIRO_L = 5;
 const int TIRO_H = 20;
 
 // LINHAS E COLUNAS TAMBÉM TEM QUE SER ALTERADAS PARA MUDAR A QUANTIDADE DE ALIENS
-const int ALIENS_INIMIGOS = 55;
+const int ALIENS_INIMIGOS = 25;
 const int LINHAS = 5;
-const int COLUNAS = 11;
+const int COLUNAS = 5;
 const int ALIEN_L = 60;
 const int ALIEN_H = 30;
 const float ALIEN_X_VEL = 2;
@@ -107,6 +108,7 @@ typedef struct alien {
 		float x, y;
 		float x_vel, y_vel;
 		ALLEGRO_COLOR cor;
+		int vida;
 
 } Alien_t;
 
@@ -121,6 +123,7 @@ void inicializa_alien(Alien_t *alien)
 			alien[elemento].y = 25 + i * ESPACO_Y_ENTRE_ALIENS;
 			alien[elemento].x_vel = ALIEN_X_VEL;
 			alien[elemento].y_vel = ALIEN_H;
+			alien[elemento].vida = 1;
 			alien[elemento].cor = al_map_rgb(rand()%256, rand()%256, rand()%256 );
 		}
 	}	
@@ -130,10 +133,13 @@ void inicializa_alien(Alien_t *alien)
 void desenha_aliens(Alien_t *alien, int tamanho)
 {
 	for(int i = 0; i < tamanho; i++)
-	al_draw_filled_rectangle( alien[i].x , alien[i].y ,
-							  alien[i].x + ALIEN_L , alien[i].y + ALIEN_H ,
-							 alien[i].cor);
-	
+	{
+		if(alien[i].vida == 1){
+			al_draw_filled_rectangle( alien[i].x , alien[i].y ,
+									alien[i].x + ALIEN_L , alien[i].y + ALIEN_H ,
+									alien[i].cor);
+		}
+	}
 }
 // 	MOVIMENTO DO ALIEN
 void movimenta_alien_na_tela(Alien_t *alien)
@@ -141,6 +147,7 @@ void movimenta_alien_na_tela(Alien_t *alien)
 	int inverte_direcao = 0;
 	for(int i = 0; i < LINHAS * COLUNAS; i++)
 	{	
+		if(alien[i].vida == 0) {continue;} // alien morto
 		if(alien[i].x + ALIEN_L + alien[i].x_vel > TELA_X || alien[i].x + alien[i].x_vel < 0) // verifica se os aliens chegaram nos limites da tela
 		{
 			inverte_direcao = 1;
@@ -151,6 +158,7 @@ void movimenta_alien_na_tela(Alien_t *alien)
 	{
 		for(int i = 0; i < LINHAS * COLUNAS; i++)
 		{
+			if(alien[i].vida == 0) {continue;} // alien morto
 				alien[i].y += alien[i].y_vel;
 				alien[i].x_vel *= -1;
 		}			
@@ -158,10 +166,23 @@ void movimenta_alien_na_tela(Alien_t *alien)
 
 	for(int i = 0; i < LINHAS * COLUNAS; i++)
 	{
+		if(alien[i].vida == 0) {continue;} // alien morto
 		alien[i].x += alien[i].x_vel; // movimento padrão horizontal dos aliens
 	}
 	
 }
+
+int verifica_aliens_vivos(Alien_t *alien, int quant_aliens)
+{
+	for (int i = 0; i < quant_aliens; i++) 
+	{
+		if(alien[i].vida != 0) {
+			return 1; // ainda há alien vivo
+		}
+	}
+	return 0; // todos mortos
+}
+
 /**/
 
 /********************* TIRO DA NAVE ***************************/
@@ -169,6 +190,7 @@ void movimenta_alien_na_tela(Alien_t *alien)
 typedef struct tiro{ 
 		float x, y;
 		float y_vel;
+		int mov;
 		ALLEGRO_COLOR cor; 
 }Tiro_t;
 
@@ -177,6 +199,7 @@ void inicializa_tiro_nave(Tiro_t *tiro, Nave_t nave)
 	tiro->x = nave.x - TIRO_L/2;
 	tiro->y = TELA_Y - GRASS_Y/2 - NAVE_H;
 	tiro->y_vel = TIRO_NAVE_VEL;
+	tiro->mov = 1;
 	tiro->cor = al_map_rgb(255,255,255);
 
 }
@@ -204,14 +227,14 @@ void movimenta_tiro_nave(Tiro_t *tiro, int *atirando)
 	}
 }
 
-int verifica_tiro_passou_tela(Tiro_t *tiro)
+//se chegar no fim da tela 
+int verifica_tiro_passou_tela_ou_acertou_alien(Tiro_t *tiro)
 {
-	if(tiro->y <= 0)
+	if(tiro->y <= 0 || tiro->mov == 0)
 	{
 		return 1;
 	}
 	return 0;
-
 }
 
 /********************* O TIRO DOS ALIENS ***************************/
@@ -241,6 +264,7 @@ int colisao_alien_solo(Alien_t *alien)
 	}
 }
 
+//quando os aliens batem na nave
 int colisao_alien_com_nave(Nave_t nave, Alien_t *alien)
 {
     // verifica as coodernadas do triangulo
@@ -268,7 +292,45 @@ int colisao_alien_com_nave(Nave_t nave, Alien_t *alien)
     return 1;  // Nenhuma colisão
 }
 
-int colisao_tiro_nave_alien(){}
+//quando o tiro colide com a nave
+int colisao_tiro_nave_alien(Tiro_t *tiro, Alien_t *alien, int quant_aliens)
+{
+	int contador = 0;
+
+	for (int i = 0; i < quant_aliens; i++) {
+	
+		if(alien[i].vida == 0) { continue; }
+
+		//limites para o tiro
+		float tiro_x1 = tiro->x;
+		float tiro_y1 = tiro->y;
+		float tiro_x2 = tiro->x + TIRO_L;
+		float tiro_y2 = tiro->y + TIRO_H;
+	
+        // limites para o alien
+		float alien_x1  = alien[i].x;
+        float alien_y1 = alien[i].y;
+		float alien_x2  = alien[i].x + ALIEN_L;
+        float alien_y2 = alien[i].y + ALIEN_H;
+
+        // Verifica sobreposição horizontal e vertical do alien com tiro
+        int colide_horizontal = !(tiro_x2 < alien_x1 || tiro_x1 > alien_x2);
+		int colide_vertical = !(tiro_y2 < alien_y1 || tiro_y1 > alien_y2);
+
+		//houve colisão e mata o alien da posição i!
+        if(colide_horizontal && colide_vertical) 
+		{
+			alien[i].vida = 0;
+			tiro->mov = 0;
+        	return 1;
+        }
+	}
+	return 0;
+}
+
+
+
+
 
 int colisao_tiro_alien_nave(){}
 
@@ -410,8 +472,13 @@ int main(int argc, char **argv) {
 			{
 			desenha_tiro_nave(tiro);
 			movimenta_tiro_nave(&tiro, &atira);
+
+			if (colisao_tiro_nave_alien(&tiro, alien, ALIENS_INIMIGOS))
+			{
+				atira = 0;
+			}
 			
-			if( verifica_tiro_passou_tela(&tiro) == 1) 
+			if( verifica_tiro_passou_tela_ou_acertou_alien(&tiro) == 1) 
 				{
 					atira = 0;
 				}
@@ -419,9 +486,10 @@ int main(int argc, char **argv) {
 
 			movimenta_alien_na_tela(alien);
 
-			jogando = colisao_alien_solo(alien);
-
-			jogando = colisao_alien_com_nave(nave, alien);
+			if(verifica_aliens_vivos(alien, ALIENS_INIMIGOS) == 0 || colisao_alien_solo(alien) == 0 || colisao_alien_com_nave(nave, alien) == 0)
+			{
+				jogando = 0;
+			}
 
 			restringe_nave_na_tela(&nave); //faz com que a nave não transpace o limite da tela
 
