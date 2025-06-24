@@ -1,2 +1,2 @@
-# space_invaders
+# invaders
 Projeto do Space_Invaders de PDS-1
