@@ -32,7 +32,7 @@ const int ESPACO_Y_ENTRE_ALIENS = 60;
 const int LINHAS = 5;
 const int COLUNAS = 11;
 
-/**/
+/***/
 
 /**************CRIANDO CENÁRIO********************/
 
