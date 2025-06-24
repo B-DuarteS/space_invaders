@@ -7,7 +7,6 @@
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
 
-// ideia: fazer um vetor e colocar todos os aliens nele pra (são 55 aliens independente da fase)
 
 
 /****************VARIÁVEIS GLOBAIS****************/
@@ -165,7 +164,7 @@ void movimenta_alien_na_tela(Alien_t *alien)
 }
 /**/
 
-/********************* TIROS DA NAVE ***************************/
+/********************* TIRO DA NAVE ***************************/
 // - ok
 typedef struct tiro{ 
 		float x, y;
@@ -215,7 +214,7 @@ int verifica_tiro_passou_tela(Tiro_t *tiro)
 
 }
 
-/********************* OS TIROS DOS ALIENS ***************************/
+/********************* O TIRO DOS ALIENS ***************************/
 
 
 //ALIEN
