@@ -14,28 +14,29 @@
 
 const float FPS = 120;
 
-const int TELA_Y = 800; // 800 pixels na vertical
+const int TELA_Y = 1000; // 800 pixels na vertical
 const int TELA_X = 1200; // 1200 pixels na horizontal
 
 const int GRASS_Y = 60; // barra no fim da tela que delimita onde os aliens vão chegar
 
 const int NAVE_H = 50;
 const int NAVE_L = 100;
-const int NAVE_VEL = 10;
+const int NAVE_VEL = 7;
 
-const float TIRO_NAVE_VEL = 10;
+const float TIRO_NAVE_VEL = 13;
 const int TIRO_L = 5;
 const int TIRO_H = 20;
 
 // LINHAS E COLUNAS TAMBÉM TEM QUE SER ALTERADAS PARA MUDAR A QUANTIDADE DE ALIENS
-const int ALIENS_INIMIGOS = 3;
-const int LINHAS = 1;
-const int COLUNAS = 3;
+const int ALIENS_INIMIGOS = 40;
+const int LINHAS = 4;
+const int COLUNAS = 10;
 const int ALIEN_L = 60;
 const int ALIEN_H = 30;
-const float ALIEN_X_VEL = 2;
-const float AUMENTO_DA_DIFICULDADE_VEL_ALEIN = 1; // a taxa de aumento da velocidade dos aliens a cada rodada
-const float AUMENTO_DIFICULDADE_VEL_TIRO_ALIEN = 10; // a taxa de aumento da velocidade da bala dos aliens a cada rodada
+const float ALIEN_X_VEL = 0.5;
+const float AUMENTO_DA_DIFICULDADE_VEL_ALEIN = 0.5; // a taxa de aumento da velocidade dos aliens a cada rodada
+const float AUMENTO_DIFICULDADE_VEL_TIRO_ALIEN = 0.5; // a taxa de aumento da velocidade da bala dos aliens a cada rodada
+const int PROBABILIDADE_ALIEN_ATIRAR = 150; // está em 0.6% de algum alien atirar!
 const int ESPACO_X_ENTRE_ALIENS = 90;
 const int ESPACO_Y_ENTRE_ALIENS = 60;
 
@@ -124,7 +125,7 @@ void inicializa_alien(Alien_t *alien, float velocidade)
 		{
 			int elemento = i * COLUNAS + j;
 			alien[elemento].x = 0 + j * ESPACO_X_ENTRE_ALIENS;
-			alien[elemento].y = 25 + i * ESPACO_Y_ENTRE_ALIENS;
+			alien[elemento].y = 40 + i * ESPACO_Y_ENTRE_ALIENS;
 			alien[elemento].x_vel = ALIEN_X_VEL + velocidade;
 			alien[elemento].y_vel = ALIEN_H;
 			alien[elemento].vida = 1;
@@ -288,7 +289,7 @@ void movimenta_tiro_alien(Tiro_t *tiro, int quantidade_tiros_aliens) // determin
 
 void randomiza_tiro_alien(Tiro_t *tiro_alien, Alien_t *alien)
 {
-	if(rand() % 1001 < 2) // 0,2% de chance de atirar
+	if(rand() % PROBABILIDADE_ALIEN_ATIRAR < 1) // passo a poder controlar a chance do alien atirar com uma variável global!
 	{
 		for(int i = 0; i < MAX_TIROS_POR_ALIENS; i++) 
 		{
@@ -396,10 +397,10 @@ int colisao_tiro_nave_alien(Tiro_t *tiro, Alien_t *alien, int quant_aliens)
 int colisao_tiro_do_alien_com_nave(Tiro_t *tiro_alien, Nave_t nave)
 {
 	 // verifica as coodernadas do triangulo
-    float nave_topo = TELA_Y - GRASS_Y/2 - NAVE_H + 15; // esses 15's são para o hitbox ficar mais precisa com relação a nave e poder aumentar o espaço de desvio do jogador!
+    float nave_topo = TELA_Y - GRASS_Y/2 - NAVE_H + 25; // esses numeros (25 e 65) são para a hitbox ficar mais precisa com relação a nave e poder aumentar o espaço de desvio do jogador!
     float nave_base = TELA_Y - GRASS_Y/2;
-    float nave_esq  = nave.x - NAVE_L/2 + 15;
-    float nave_dir  = nave.x + NAVE_L/2 - 15;
+    float nave_esq  = nave.x - NAVE_L/2 + 65;
+    float nave_dir  = nave.x + NAVE_L/2;
 
     for (int i = 0; i < LINHAS * COLUNAS; i++) {
         // limites para o alien
@@ -423,8 +424,21 @@ int colisao_tiro_do_alien_com_nave(Tiro_t *tiro_alien, Nave_t nave)
 
 /**/
 
+/********************* PROCESSOS DE CONSTRUÇÃO DO HUD ***************************/
 
+void desenha_pontuacao(int pontuacao, ALLEGRO_FONT *fonte)
+{
+	char texto[100];
+    sprintf(texto, "Pontos: %d", pontuacao);
+    al_draw_text(fonte, al_map_rgb(255, 255, 255), 20, 10, 0, texto); // distancia ajustada no canto superior  esquerdo da tela! 
+}
 
+void desenha_fase(int fase, ALLEGRO_FONT *fonte)
+{
+	char texto[100];
+	sprintf(texto, "Fase: %d", fase);
+	al_draw_text(fonte, al_map_rgb(255, 255, 255), TELA_X - 130, 10, 0, texto); // distancia ajustada no canto superior direito da tela!
+}
 
 int main(int argc, char **argv) 
 {
@@ -433,6 +447,7 @@ int main(int argc, char **argv)
 	ALLEGRO_EVENT_QUEUE *fila_eventos = NULL;
 	ALLEGRO_TIMER *timer = NULL;
 	ALLEGRO_EVENT ev;
+	ALLEGRO_FONT *fonte;
 
 	/****************ROTINAS DE INICIALIZAÇÃO****************/
 
@@ -490,11 +505,15 @@ int main(int argc, char **argv)
 
 	//inicializa o modulo allegro que carrega as fontes
 	al_init_font_addon();
-
-	//inicializa o modulo allegro que entende arquivos tff de fontes
-	if(!al_init_ttf_addon()) 
-	{
-		fprintf(stderr, "falha ao carregar o modulo tff font!\n");
+	if (!al_init_ttf_addon()) {
+		fprintf(stderr, "falha ao inicializar o modulo .ttf!\n");
+		return -1;
+	}
+	
+	// Carrega a fonte 
+	fonte = al_load_font("fonte/04B_30__.TTF", 18 , 0);
+	if (!fonte) {
+		fprintf(stderr, "falha ao carregar a fonte!\n");
 		return -1;
 	}
 
@@ -546,7 +565,9 @@ int main(int argc, char **argv)
 	inicializa_alien(alien, velocidade_alien);
 	inicializa_tiro_alien(tiro_alien, MAX_TIROS_POR_ALIENS, velocidade_bala_alien);
 
-	
+	//variáveis responsáveis por acúmulo de pontos, fases, etc
+	int fase = 1; // variável que controla a fase do jogo
+	int pontuacao = 0;
 
 	int jogando = 1;
 	while(jogando)
@@ -560,6 +581,10 @@ int main(int argc, char **argv)
 
 			desenha_cenario(); // inicializando cenário
 
+			desenha_pontuacao(pontuacao, fonte);
+
+			desenha_fase(fase, fonte);
+
 			desenha_nave(nave); // inicializa a nave no cenário
 
 			desenha_aliens(alien, ALIENS_INIMIGOS); // inicializa o alien no cenário
@@ -570,13 +595,17 @@ int main(int argc, char **argv)
 				desenha_tiro_nave(tiro_nave);
 				movimenta_tiro_nave(&tiro_nave, &atira);
 
+				if( colisao_tiro_nave_alien(&tiro_nave, alien, ALIENS_INIMIGOS))
+				{
+					pontuacao += 10;
+				}
 				if ( colisao_tiro_nave_alien(&tiro_nave, alien, ALIENS_INIMIGOS) || verifica_tiro_passou_tela_ou_acertou_alien(&tiro_nave))
 				{
 					atira = 0;
+					
 				}
-				
 			}
-			
+
 			movimenta_alien_na_tela(alien);
 
 			randomiza_tiro_alien(tiro_alien, alien);
@@ -591,6 +620,9 @@ int main(int argc, char **argv)
 
 				velocidade_alien += AUMENTO_DA_DIFICULDADE_VEL_ALEIN;
 				inicializa_alien(alien, velocidade_alien);
+				
+				fase++; // aumenta a fase do jogo
+				pontuacao += 50; // aumenta a pontuação do jogador	
 			}
 
 
@@ -669,6 +701,7 @@ int main(int argc, char **argv)
 	al_destroy_timer(timer);
 	al_destroy_display(display);
 	al_destroy_event_queue(fila_eventos);
+	al_destroy_font(fonte);
 	free(alien);
 	free(tiro_alien);
 	
