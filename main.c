@@ -23,19 +23,22 @@ const int NAVE_H = 50;
 const int NAVE_L = 100;
 const int NAVE_VEL = 10;
 
-const float TIRO_NAVE_VEL = 20;
+const float TIRO_NAVE_VEL = 15;
 const int TIRO_L = 5;
 const int TIRO_H = 20;
 
 // LINHAS E COLUNAS TAMBÉM TEM QUE SER ALTERADAS PARA MUDAR A QUANTIDADE DE ALIENS
-const int ALIENS_INIMIGOS = 55;
+const int ALIENS_INIMIGOS = 25;
 const int LINHAS = 5;
-const int COLUNAS = 10;
+const int COLUNAS = 5;
 const int ALIEN_L = 60;
 const int ALIEN_H = 30;
-const float ALIEN_X_VEL = 2;
+const float ALIEN_X_VEL = 5;
+const float AUMENTO_DA_DIFICULDADE = 1;
 const int ESPACO_X_ENTRE_ALIENS = 90;
 const int ESPACO_Y_ENTRE_ALIENS = 60;
+
+const int MAX_TIROS_ALIENS = 5; // quantos tiros os aliens podem dar em uma rodada
 
 
 
@@ -113,7 +116,7 @@ typedef struct alien {
 } Alien_t;
 
 // INICIALIZA O ALIENS NA TELA
-void inicializa_alien(Alien_t *alien)
+void inicializa_alien(Alien_t *alien, float velocidade)
 {
 	for(int i = 0; i < LINHAS; i++)
 	{	for(int j = 0; j < COLUNAS; j++) // posiciona 
@@ -121,7 +124,7 @@ void inicializa_alien(Alien_t *alien)
 			int elemento = i * COLUNAS + j;
 			alien[elemento].x = 0 + j * ESPACO_X_ENTRE_ALIENS;
 			alien[elemento].y = 25 + i * ESPACO_Y_ENTRE_ALIENS;
-			alien[elemento].x_vel = ALIEN_X_VEL;
+			alien[elemento].x_vel = ALIEN_X_VEL + velocidade;
 			alien[elemento].y_vel = ALIEN_H;
 			alien[elemento].vida = 1;
 			alien[elemento].cor = al_map_rgb(rand()%256, rand()%256, rand()%256 );
@@ -215,7 +218,7 @@ void desenha_tiro_nave(Tiro_t tiro)
 }
 
 //movimenta o tiro 
-void movimenta_tiro_nave(Tiro_t *tiro, int *atirando)
+void movimenta_tiro_nave(Tiro_t *tiro, int *atirando) //atirando se refere a booleana que faz o tiro sumir ao entrar em contato com alien
 {
 	if (*atirando == 1)
 	{
@@ -239,9 +242,6 @@ int verifica_tiro_passou_tela_ou_acertou_alien(Tiro_t *tiro)
 
 /********************* O TIRO DOS ALIENS ***************************/
 
-
-//ALIEN
-void tiro_do_alien(){}
 /**/
 
 /********************* COLISÕES ***************************/
@@ -292,7 +292,7 @@ int colisao_alien_com_nave(Nave_t nave, Alien_t *alien)
     return 1;  // Nenhuma colisão
 }
 
-//quando o tiro colide com a nave
+//quando o tiro colide com o alien
 int colisao_tiro_nave_alien(Tiro_t *tiro, Alien_t *alien, int quant_aliens)
 {
 	int contador = 0;
@@ -322,17 +322,18 @@ int colisao_tiro_nave_alien(Tiro_t *tiro, Alien_t *alien, int quant_aliens)
 		{
 			alien[i].vida = 0;
 			tiro->mov = 0;
-        	return 1;
+        	return 1; // alien morreu
         }
 	}
-	return 0;
+	return 0; // alien tá vivo
 }
 
 
 
 
 
-int colisao_tiro_alien_nave(){}
+int colisao_tiro_do_alien_com_nave(Tiro_t *tiro_alien, Nave_t nave){}
+// basicamente a mesma coisa da colisão nave com alien.
 
 /**/
 
@@ -443,14 +444,15 @@ int main(int argc, char **argv) {
 	int atira = 0;
 	// Inicialização da nave
 	Nave_t nave;
+	Tiro_t tiro_nave;
 	inicializa_nave(&nave);
 
 	// inicialização dos aliens
 	Alien_t *alien = malloc(sizeof(Alien_t)* ALIENS_INIMIGOS);
-	inicializa_alien(alien);
-
-	Tiro_t tiro;
-
+	Tiro_t *tiro_alien = malloc(sizeof(Tiro_t)* MAX_TIROS_ALIENS);
+	float velocidade_alien = 0;
+	inicializa_alien(alien, velocidade_alien);
+	
 	int jogando = 1;
 	while(jogando)
 	{
@@ -467,26 +469,28 @@ int main(int argc, char **argv) {
 
 			desenha_aliens(alien, ALIENS_INIMIGOS); // inicializa o alien no cenário
 
-			// faz o processo correto para atirar
+			// faz o processo correto para atirar e os critérios de funcionamento
 			if(atira == 1)
 			{
-			desenha_tiro_nave(tiro);
-			movimenta_tiro_nave(&tiro, &atira);
+				desenha_tiro_nave(tiro_nave);
+				movimenta_tiro_nave(&tiro_nave, &atira);
 
-			if (colisao_tiro_nave_alien(&tiro, alien, ALIENS_INIMIGOS))
-			{
-				atira = 0;
-			}
-			
-			if( verifica_tiro_passou_tela_ou_acertou_alien(&tiro) == 1) 
+				if ( colisao_tiro_nave_alien(&tiro_nave, alien, ALIENS_INIMIGOS) || verifica_tiro_passou_tela_ou_acertou_alien(&tiro_nave))
 				{
 					atira = 0;
 				}
+				
 			}
 
 			movimenta_alien_na_tela(alien);
 
-			if(verifica_aliens_vivos(alien, ALIENS_INIMIGOS) == 0 || colisao_alien_solo(alien) == 0 || colisao_alien_com_nave(nave, alien) == 0)
+			if(verifica_aliens_vivos(alien, ALIENS_INIMIGOS) == 0) // faz o aumento de dificuldade das fases!
+			{
+				velocidade_alien += AUMENTO_DA_DIFICULDADE;
+				inicializa_alien(alien, velocidade_alien);
+			}
+
+			if(colisao_alien_solo(alien) == 0 || colisao_alien_com_nave(nave, alien) == 0)
 			{
 				jogando = 0;
 			}
@@ -540,7 +544,7 @@ int main(int argc, char **argv) {
 					if(atira == 0)
 				    	{ 	
 							atira = 1;
-							inicializa_tiro_nave(&tiro, nave);
+							inicializa_tiro_nave(&tiro_nave, nave);
 						}
 					
 				break;
