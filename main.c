@@ -23,14 +23,14 @@ const int NAVE_H = 50;
 const int NAVE_L = 100;
 const int NAVE_VEL = 10;
 
-const float TIRO_NAVE_VEL = 4;
+const float TIRO_NAVE_VEL = 20;
 const int TIRO_L = 5;
 const int TIRO_H = 20;
 
 // LINHAS E COLUNAS TAMBÉM TEM QUE SER ALTERADAS PARA MUDAR A QUANTIDADE DE ALIENS
-const int ALIENS_INIMIGOS = 25;
+const int ALIENS_INIMIGOS = 55;
 const int LINHAS = 5;
-const int COLUNAS = 5;
+const int COLUNAS = 10;
 const int ALIEN_L = 60;
 const int ALIEN_H = 30;
 const float ALIEN_X_VEL = 2;
