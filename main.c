@@ -484,7 +484,7 @@ int main(int argc, char **argv) {
 
 			movimenta_alien_na_tela(alien);
 
-			if(verifica_aliens_vivos(alien, ALIENS_INIMIGOS) == 0) // faz o aumento de dificuldade das fases!
+			if(verifica_aliens_vivos(alien, ALIENS_INIMIGOS) == 0) // faz a dinamica de aumento da dificuldade das fases!
 			{
 				velocidade_alien += AUMENTO_DA_DIFICULDADE;
 				inicializa_alien(alien, velocidade_alien);
