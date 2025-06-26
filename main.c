@@ -14,7 +14,7 @@
 
 const float FPS = 120;
 
-const int TELA_Y = 1000; // 800 pixels na vertical
+const int TELA_Y = 900; // 900 pixels na vertical
 const int TELA_X = 1200; // 1200 pixels na horizontal
 
 const int GRASS_Y = 60; // barra no fim da tela que delimita onde os aliens vão chegar
@@ -53,7 +53,7 @@ void desenha_cenario()
 	al_clear_to_color(al_map_rgb(0,0,0)); // limpar tela com preto
 	al_draw_filled_rectangle( 0, TELA_Y - GRASS_Y, 
 							 TELA_X, TELA_Y, 
-							 al_map_rgb(150,150,150));
+							 al_map_rgb(0,0,36));
 
 }
 /**/
@@ -424,7 +424,7 @@ int colisao_tiro_do_alien_com_nave(Tiro_t *tiro_alien, Nave_t nave)
 
 /**/
 
-/********************* PROCESSOS DE CONSTRUÇÃO DE HUD ***************************/
+/******************************** PROCESSOS DE CONSTRUÇÃO DE HUD ************************************************/
 
 void desenha_pontuacao(int pontuacao, ALLEGRO_FONT *fonte)
 {
@@ -445,9 +445,7 @@ int menu_do_jogo(ALLEGRO_FONT *fonte_grande, ALLEGRO_FONT *fonte_enorme, ALLEGRO
 	ALLEGRO_EVENT_QUEUE *fila_eventos_menu = NULL;
     ALLEGRO_TIMER *timer_menu = al_create_timer(1.0 / FPS);
     ALLEGRO_EVENT ev_menu;
-	ALLEGRO_COLOR cor_nao_opcao;
-	ALLEGRO_COLOR cor_eh_a_opcao;
-	ALLEGRO_COLOR cor_opcao1, cor_opcao2, cor_opcao3, cor_opcao4;
+	ALLEGRO_COLOR cor_roxa;
 	
 	 			/***********ROTINAS DE INICIALIZAÇÃO****************/
 
@@ -490,8 +488,7 @@ int menu_do_jogo(ALLEGRO_FONT *fonte_grande, ALLEGRO_FONT *fonte_enorme, ALLEGRO
 	al_start_timer(timer_menu);
 	int menu = 1; // quando 1 ele tá ativo!
 	int modo = 0; // variar em 4 (0-3) 0 - iniciar o jogo 1 - recordes 2 - tutorial 3 - modo HARDCORE!
-	cor_nao_opcao = al_map_rgb( 255, 255, 255);
-	cor_eh_a_opcao = al_map_rgb(151,8,255);
+	cor_roxa = al_map_rgb(151,8,255);
 
 	while(menu)
 	{
@@ -501,16 +498,6 @@ int menu_do_jogo(ALLEGRO_FONT *fonte_grande, ALLEGRO_FONT *fonte_enorme, ALLEGRO
 		{
 			switch(ev_menu.keyboard.keycode){
 
-			case ALLEGRO_KEY_UP:
-				if(modo > 0)
-				{modo--;}  // fica movimentando nas opções do menu
-			break;
-			
-			case ALLEGRO_KEY_DOWN:
-				if(modo < 3)
-				{modo++;} //  fica movimentando nas opções do menu
-			break;
-			
 			case ALLEGRO_KEY_ENTER:
 				menu = 0; // sai do menu
 			break;
@@ -524,33 +511,10 @@ int menu_do_jogo(ALLEGRO_FONT *fonte_grande, ALLEGRO_FONT *fonte_enorme, ALLEGRO
 		
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 
-		//esses if's determinam a qual cor e qual menu setado, se roxo então é o menu desejado
-		if (modo == 0)
-			{ cor_opcao1 = cor_eh_a_opcao; }
-		else
-			{ cor_opcao1 = cor_nao_opcao; }
-
-		if (modo == 1)
-			{ cor_opcao2 = cor_eh_a_opcao; }
-		else
-			{ cor_opcao2 = cor_nao_opcao; }
-
-		if (modo == 2)
-			{ cor_opcao3 = cor_eh_a_opcao; }
-		else
-			{ cor_opcao3 = cor_nao_opcao; }
-
-		if (modo == 3)
-			{ cor_opcao4 = cor_eh_a_opcao; }
-		else
-			{ cor_opcao4 = cor_nao_opcao; }
-
-		al_draw_text(fonte_grande, cor_opcao1, TELA_X/2 - 300, TELA_Y/2 - 40, 0, "1 - MODO NORMAL");
-		al_draw_text(fonte_grande, cor_opcao2, TELA_X/2 - 300, TELA_Y/2 + 40, 0, "2 - HARDCORE!!!!"); // modo desafio sinistro
-		al_draw_text(fonte_grande, cor_opcao3, TELA_X/2 - 300, TELA_Y/2 + 120, 0, "3 - RECORDES");
-		al_draw_text(fonte_grande, cor_opcao4, TELA_X/2 - 300, TELA_Y/2 + 200, 0, "4 - TUTORIAL");
-		al_draw_text(fonte_enorme, cor_eh_a_opcao, TELA_X/2 - 560, TELA_Y/2 - 260, 0, "SPACE INVADERS" ); // colocar o space invaders no centro da tela
-		al_draw_text(fonte_pequena, cor_eh_a_opcao, TELA_X/2 - 350, TELA_Y - 180, 0, "uses setas cima e baixo para selecionar o modo!" ); // coloca o guia pro jogador 
+		al_draw_text(fonte_grande, cor_roxa, TELA_X/2 - 200, TELA_Y/2, 0, "INICIAR");
+		al_draw_text(fonte_enorme, cor_roxa, TELA_X/2 - 560, TELA_Y/2 - 260, 0, "SPACE INVADERS" ); // colocar o space invaders no centro da tela
+		al_draw_text(fonte_pequena, cor_roxa, TELA_X/2 - 240, TELA_Y - 180, 0, "pressione ENTER para iniciar" ); // coloca o guia pro jogador 
+		al_draw_text(fonte_pequena, cor_roxa, TELA_X/2 - 440, TELA_Y - 360, 0, "Use 'A' e 'D' para se movimentar e 'SPACE' para atirar" );
 
 
 		// atualiza tela
@@ -566,7 +530,7 @@ int menu_do_jogo(ALLEGRO_FONT *fonte_grande, ALLEGRO_FONT *fonte_enorme, ALLEGRO
 }
 
 
-/**/
+/****/
 
 
 int main(int argc, char **argv) 
@@ -641,14 +605,14 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	
-	// Carrega a fonte do modo normal e HARDCORE!!!!
+	// Carrega a fonte do modo normal e pequena no menu
 	fonte = al_load_font("fonte/04B_30__.TTF", 18 , 0);
 	if (!fonte) {
 		fprintf(stderr, "falha ao carregar a fonte!\n");
 		return -1;
 	}
 
-	//carrega a fonte dos menus
+	//carrega a fonte grande do menu
 	fonte_grande_menu = al_load_font("fonte/04B_30__.TTF", 56 , 0);
 	if (!fonte_grande_menu) {
     fprintf(stderr, "Falha ao carregar fonte do menu!\n");
