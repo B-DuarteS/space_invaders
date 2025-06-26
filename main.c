@@ -424,7 +424,7 @@ int colisao_tiro_do_alien_com_nave(Tiro_t *tiro_alien, Nave_t nave)
 
 /**/
 
-/********************* PROCESSOS DE CONSTRUÇÃO DO HUD ***************************/
+/********************* PROCESSOS DE CONSTRUÇÃO DE HUD ***************************/
 
 void desenha_pontuacao(int pontuacao, ALLEGRO_FONT *fonte)
 {
@@ -440,6 +440,135 @@ void desenha_fase(int fase, ALLEGRO_FONT *fonte)
 	al_draw_text(fonte, al_map_rgb(255, 255, 255), TELA_X - 130, 10, 0, texto); // distancia ajustada no canto superior direito da tela!
 }
 
+int menu_do_jogo(ALLEGRO_FONT *fonte_grande, ALLEGRO_FONT *fonte_enorme, ALLEGRO_FONT *fonte_pequena)
+{
+	ALLEGRO_EVENT_QUEUE *fila_eventos_menu = NULL;
+    ALLEGRO_TIMER *timer_menu = al_create_timer(1.0 / FPS);
+    ALLEGRO_EVENT ev_menu;
+	ALLEGRO_COLOR cor_nao_opcao;
+	ALLEGRO_COLOR cor_eh_a_opcao;
+	ALLEGRO_COLOR cor_opcao1, cor_opcao2, cor_opcao3, cor_opcao4;
+	
+	 			/***********ROTINAS DE INICIALIZAÇÃO****************/
+
+	//cria um temporizador que incrementa uma unidade a cada 1.0/FPS segundos
+    timer_menu = al_create_timer(1.0 / FPS);
+    if(!timer_menu) 
+	{
+		fprintf(stderr, "falha para criar o timer!\n");
+		return -1;
+	}
+
+	//instala o mouse
+	if(!al_install_mouse()) 
+	{
+		fprintf(stderr, "falha ao inicializar o mouse!\n");
+		return -1;
+	}
+
+			/************* CRIA INICIALIZA A FILA DE EVENTOS *********************/
+
+	fila_eventos_menu = al_create_event_queue();
+	if(!fila_eventos_menu) 
+	{
+		fprintf(stderr, "não conseguiu criar a event_queue!\n");
+		al_destroy_timer(timer_menu);
+		return -1;
+	}
+
+	//registra na fila os eventos de teclado (ex: pressionar uma tecla)
+	al_register_event_source(fila_eventos_menu, al_get_keyboard_event_source());
+	//registra na fila os eventos de tempo: quando o tempo altera de t para t+1
+    al_register_event_source(fila_eventos_menu, al_get_timer_event_source(timer_menu));
+	// registram na fila eventos de mouse;
+	al_register_event_source(fila_eventos_menu, al_get_display_event_source(al_get_current_display()));
+    
+
+
+	/*************** FUNÇÕES E PROCESSOS DE INICIALIZAÇÃO DO JOGO ****************/
+	
+	al_start_timer(timer_menu);
+	int menu = 1; // quando 1 ele tá ativo!
+	int modo = 0; // variar em 4 (0-3) 0 - iniciar o jogo 1 - recordes 2 - tutorial 3 - modo HARDCORE!
+	cor_nao_opcao = al_map_rgb( 255, 255, 255);
+	cor_eh_a_opcao = al_map_rgb(151,8,255);
+
+	while(menu)
+	{
+		al_wait_for_event(fila_eventos_menu, &ev_menu);
+		//primeiro evento é conseguir controlar o teclado
+		if(ev_menu.type == ALLEGRO_EVENT_KEY_DOWN)
+		{
+			switch(ev_menu.keyboard.keycode){
+
+			case ALLEGRO_KEY_UP:
+				if(modo > 0)
+				{modo--;}  // fica movimentando nas opções do menu
+			break;
+			
+			case ALLEGRO_KEY_DOWN:
+				if(modo < 3)
+				{modo++;} //  fica movimentando nas opções do menu
+			break;
+			
+			case ALLEGRO_KEY_ENTER:
+				menu = 0; // sai do menu
+			break;
+			}
+		}
+
+		//fechamento da tela quando clica no x
+		if(ev_menu.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+			menu = 0;
+		}
+		
+		al_clear_to_color(al_map_rgb(0, 0, 0));
+
+		//esses if's determinam a qual cor e qual menu setado, se roxo então é o menu desejado
+		if (modo == 0)
+			{ cor_opcao1 = cor_eh_a_opcao; }
+		else
+			{ cor_opcao1 = cor_nao_opcao; }
+
+		if (modo == 1)
+			{ cor_opcao2 = cor_eh_a_opcao; }
+		else
+			{ cor_opcao2 = cor_nao_opcao; }
+
+		if (modo == 2)
+			{ cor_opcao3 = cor_eh_a_opcao; }
+		else
+			{ cor_opcao3 = cor_nao_opcao; }
+
+		if (modo == 3)
+			{ cor_opcao4 = cor_eh_a_opcao; }
+		else
+			{ cor_opcao4 = cor_nao_opcao; }
+
+		al_draw_text(fonte_grande, cor_opcao1, TELA_X/2 - 300, TELA_Y/2 - 40, 0, "1 - MODO NORMAL");
+		al_draw_text(fonte_grande, cor_opcao2, TELA_X/2 - 300, TELA_Y/2 + 40, 0, "2 - HARDCORE!!!!"); // modo desafio sinistro
+		al_draw_text(fonte_grande, cor_opcao3, TELA_X/2 - 300, TELA_Y/2 + 120, 0, "3 - RECORDES");
+		al_draw_text(fonte_grande, cor_opcao4, TELA_X/2 - 300, TELA_Y/2 + 200, 0, "4 - TUTORIAL");
+		al_draw_text(fonte_enorme, cor_eh_a_opcao, TELA_X/2 - 560, TELA_Y/2 - 260, 0, "SPACE INVADERS" ); // colocar o space invaders no centro da tela
+		al_draw_text(fonte_pequena, cor_eh_a_opcao, TELA_X/2 - 350, TELA_Y - 180, 0, "uses setas cima e baixo para selecionar o modo!" ); // coloca o guia pro jogador 
+
+
+		// atualiza tela
+		al_flip_display();
+
+	}
+
+	// fecha a tela, limpa a memoria, etc.
+	al_destroy_event_queue(fila_eventos_menu);
+	al_destroy_timer(timer_menu);
+
+	return modo;
+}
+
+
+/**/
+
+
 int main(int argc, char **argv) 
 {
 
@@ -447,7 +576,9 @@ int main(int argc, char **argv)
 	ALLEGRO_EVENT_QUEUE *fila_eventos = NULL;
 	ALLEGRO_TIMER *timer = NULL;
 	ALLEGRO_EVENT ev;
-	ALLEGRO_FONT *fonte;
+	ALLEGRO_FONT *fonte = NULL;
+	ALLEGRO_FONT *fonte_grande_menu = NULL;
+	ALLEGRO_FONT *fonte_enorme_menu = NULL;
 
 	/****************ROTINAS DE INICIALIZAÇÃO****************/
 
@@ -510,11 +641,25 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	
-	// Carrega a fonte 
+	// Carrega a fonte do modo normal e HARDCORE!!!!
 	fonte = al_load_font("fonte/04B_30__.TTF", 18 , 0);
 	if (!fonte) {
 		fprintf(stderr, "falha ao carregar a fonte!\n");
 		return -1;
+	}
+
+	//carrega a fonte dos menus
+	fonte_grande_menu = al_load_font("fonte/04B_30__.TTF", 56 , 0);
+	if (!fonte_grande_menu) {
+    fprintf(stderr, "Falha ao carregar fonte do menu!\n");
+    return -1;
+	}
+
+	//carrega a fonte enorme dos menu
+	fonte_enorme_menu = al_load_font("fonte/04B_30__.TTF", 90 , 0);
+	if (!fonte_enorme_menu) {
+    fprintf(stderr, "Falha ao carregar fonte do menu!\n");
+    return -1;
 	}
 
 	/**/
@@ -544,6 +689,11 @@ int main(int argc, char **argv)
 
 
 	/*************** FUNÇÕES E PROCESSOS DE INICIALIZAÇÃO DO JOGO ****************/
+
+
+
+	// tudo que se refere ao menu principal do jogo
+	menu_do_jogo(fonte_grande_menu, fonte_enorme_menu, fonte);
 
 	al_start_timer(timer);
 	//movimentação da nave
